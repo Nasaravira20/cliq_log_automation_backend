@@ -1,0 +1,92 @@
+
+response = Map();
+msg = message.toLowerCase().trim();
+// Work-related keywords and action words
+work_keywords = {"log:","update:","worked:","task:","done:","status:"};
+action_words = {"fixed","updated","implemented","completed","started","reviewed","deployed","tested","added","removed","refactored","debugged","solved","configured"};
+is_keyword_log = false;
+is_action_log = false;
+// Check if message starts with any work keyword
+for each  kw in work_keywords
+{
+	if(msg.startsWith(kw))
+	{
+		is_keyword_log = true;
+		break;
+	}
+}
+// Check if message contains any action verb
+for each  verb in action_words
+{
+	if(msg.contains(verb))
+	{
+		is_action_log = true;
+		break;
+	}
+}
+// ==========================
+// LOGGING WORK ACTIVITY
+// ==========================
+if(is_keyword_log || is_action_log)
+{
+	log_msg = message;
+	webhook_url = "https://nzr8zn1j-8000.inc1.devtunnels.ms/datatosheet";
+	payload = {"user":user.get("first_name"),"message":log_msg,"timestamp":zoho.currenttime.toString("yyyy-MM-dd'T'HH:mm:ss")};
+	resp = invokeurl
+	[
+		url :webhook_url
+		type :POST
+		body:payload.toString()
+		headers:{"Content-Type":"application/json"}
+	];
+	response.put("text","Noted! Added to your daily log.");
+	return response;
+}
+// ==========================
+// NON-LOGGING MESSAGES
+// ==========================
+if(msg.contains("hi") || msg.contains("hey"))
+{
+	text = "Hi! How can I help you?";
+	response.put("suggestions",{"list":{{"text":"Summary"},{"text":"Log"}}});
+}
+else if(msg.equalsIgnoreCase("i am great!"))
+{
+	text = "Glad to hear that!";
+}
+else if(msg.equalsIgnoreCase("meh!"))
+{
+	text = "Oops! Don't worry. Your day will get better!";
+}
+else if(msg == "summary")
+{
+	text = "Please select any of the filters";
+	response.put("suggestions",{"list":{{"text":"Today"},{"text":"Yesterday"},{"text":"Week"}}});
+}
+else if(msg == "today" || msg == "yesterday" || msg == "week")
+{
+	webhook_url = "https://nzr8zn1j-8000.inc1.devtunnels.ms/summary";
+	payload = {"user":user.get("first_name"),"type":msg};
+	resp = invokeurl
+	[
+		url :webhook_url
+		type :POST
+		body:payload.toString()
+		headers:{"Content-Type":"application/json"}
+	];
+	text = resp.get("summary");
+}
+else if(msg == "log")
+{
+	text = "Please provide the tasks to be logged! Use any of these action words:\n" + action_words.toString();
+}
+else if(msg == "user")
+{
+	test = "hello";
+}
+else
+{
+	text = "Messaging me for the first time? Say Hi!" + user;
+}
+response.put("text",text);
+return response;
